@@ -1,4 +1,0 @@
-interface:
-  display_name: "SpiderMind"
-  short_description: "三阶渐进式爬虫逆向框架，从零到一项目完整自动交付指南"
-  default_prompt: "Use spider-mind to build a complete scraping project from scratch: start with pure Python requests to test the target, escalate to env-patching with Playwright and jsreverser only when blocked, and deliver a production-ready project scaffold."
