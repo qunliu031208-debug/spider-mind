@@ -262,6 +262,7 @@ def generate_sign(page: int, timestamp: int) -> str:
 - 不要一次扣太多代码。先扣入口函数，缺什么补什么。
 - 不要在补环境的第一行就用 `jsdom`——太重了，能手工 mock 就手工 mock。
 - 不要把 Playwright 脚本当交付物。
-- 不要跳过固定输入验证，直接用在真实请求上——可能会被风控。
+- 不要跳过固定输入验证，直接用在真实请求上
+- 调试过程中如遇验证码，启动 captcha.md 流水线（Playwright 截图 + PIL 预处理 + ddddocr），不要因为验证码而放弃当前阶——可能会被风控。
 - 不要把补环境代码和加密逻辑混在一个文件里——分开便于维护。
 - 不要在 Node.js helper 里硬编码 URL 或业务参数——helper 只负责参数生成。

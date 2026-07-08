@@ -170,6 +170,62 @@ class DataPipeline:
                 f.write(json.dumps(item, ensure_ascii=False) + "\\n")
 '''
 
+TEMPLATE_CAPTCHA_HANDLER = '''"""{project_name} - 验证码处理模块"""
+
+from PIL import Image, ImageEnhance, ImageFilter
+import ddddocr
+
+
+class CaptchaHandler:
+    """验证码自动识别流水线
+    三步走：Playwright 元素级截图 → PIL 预处理增强 → ddddocr 识别
+    """
+
+    def preprocess(self, image_path, output_path=None, scale=3):
+        """AI 辅助图像预处理增强
+        处理流程：放大(Lanczos 3x) → 灰度 → 锐化 → 对比度增强(2x) → 二值化
+        """
+        if output_path is None:
+            base = image_path.rsplit(".", 1)[0]
+            output_path = f"{{base}}_enhanced.png"
+        img = Image.open(image_path)
+        w, h = img.size
+        img = img.resize((w * scale, h * scale), Image.LANCZOS)
+        img = img.convert("L")
+        img = img.filter(ImageFilter.UnsharpMask(radius=2, percent=150, threshold=3))
+        enhancer = ImageEnhance.Contrast(img)
+        img = enhancer.enhance(2.0)
+        img = img.point(lambda x: 255 if x > 128 else 0, "1")
+        img.save(output_path)
+        return output_path
+
+    def recognize(self, image_path):
+        """使用 ddddocr 识别验证码"""
+        ocr = ddddocr.DdddOcr(det=False, ocr=True, show_ad=False)
+        with open(image_path, "rb") as f:
+            result = ocr.classification(f.read())
+        return result if result else ""
+
+    def solve(self, page, captcha_selector="img.captcha",
+              input_selector="input.captcha-input",
+              submit_selector="button.submit", max_retries=3):
+        """完整验证码处理流水线"""
+        for attempt in range(1, max_retries + 1):
+            raw_path = f"captcha_raw_{{attempt}}.png"
+            page.locator(captcha_selector).first.screenshot(path=raw_path)
+            enhanced_path = self.preprocess(raw_path)
+            result = self.recognize(enhanced_path)
+            if result and len(result) >= 4:
+                page.locator(input_selector).fill(result)
+                page.locator(submit_selector).click()
+                page.wait_for_timeout(2000)
+                if not page.locator(captcha_selector).is_visible():
+                    return result
+            page.locator("img.captcha-refresh").click()
+            page.wait_for_timeout(1000)
+        return None
+'''
+
 TEMPLATE_DOTENV = """# {project_name} 环境变量
 # 复制此文件为 .env 并填入真实值
 
@@ -178,6 +234,8 @@ COOKIE=
 
 TEMPLATE_REQUIREMENTS = """requests>=2.28
 python-dotenv>=1.0
+ddddocr>=1.0
+Pillow>=10.0
 """
 
 TEMPLATE_GITIGNORE = """venv/
@@ -219,6 +277,7 @@ def scaffold(project_dir, base_url="https://example.com"):
         project_dir / "collector" / "client.py": TEMPLATE_CLIENT.format(project_name=project_name),
         project_dir / "collector" / "parser.py": TEMPLATE_PARSER,
         project_dir / "collector" / "pipeline.py": TEMPLATE_PIPELINE,
+        project_dir / "collector" / "captcha_handler.py": TEMPLATE_CAPTCHA_HANDLER.format(project_name=project_name),
         project_dir / ".env.example": TEMPLATE_DOTENV.format(project_name=project_name),
         project_dir / "requirements.txt": TEMPLATE_REQUIREMENTS,
         project_dir / ".gitignore": TEMPLATE_GITIGNORE,

@@ -149,6 +149,8 @@ def fetch_page(page: int) -> dict:
 - [ ] 每个 `.py` 文件头部有文件说明注释
 - [ ] 每个函数有 docstring 说明用途、参数、返回值
 - [ ] 加密/签名逻辑有详细的中文注释解释原理
+- [ ] captcha_handler.py（如有）独立可运行，ddddocr + Pillow 正常导入
+- [ ] ddddocr 识别测试通过（提供一张测试图片验证 OCR 功能）
 - [ ] 补环境代码（`env.js`）有注释说明每个 mock 的用途
 - [ ] 关键常量和配置有注释说明含义
 
@@ -161,8 +163,10 @@ def fetch_page(page: int) -> dict:
   - Cookie/Token 硬编码在代码中
   - 没有任何异常处理
   - 核心代码没有中文注释
+  - captcha_handler.py 中的 ddddocr 或 Pillow 无法导入
 
 - 以下情况 **可以交付但需说明**：
   - Node.js helper 需要 Node 16+（在 requirements 中注明）
   - 需要配置代理（在 README 中注明）
   - Cookie 有时效性（在 README 中注明有效期和获取方式）
+- captcha_handler.py 需要额外安装 ddddocr 和 Pillow（在 requirements.txt 中已包含）

@@ -18,7 +18,8 @@
 │   ├── __init__.py
 │   ├── client.py           # HTTP 请求封装（session、headers、重试）
 │   ├── parser.py           # 数据解析提取
-│   └── pipeline.py         # 数据清洗和存储
+│   ├── pipeline.py         # 数据清洗和存储
+│   └── captcha_handler.py  # 验证码处理（截图 + AI预处理 + ddddocr）
 ├── helper/                 # Node.js helper（如果有的话）
 │   ├── env.js              # 补环境代码
 │   ├── encrypt.js          # 加密核心逻辑
@@ -166,6 +167,67 @@ class DataPipeline:
                 f.write(json.dumps(item, ensure_ascii=False) + "\n")
 ```
 
+### collector/captcha_handler.py
+
+```python
+﻿# -*- coding: utf-8 -*-
+"""验证码处理模块 — 截图 + AI 预处理 + ddddocr 识别"""
+
+from PIL import Image, ImageEnhance, ImageFilter
+import ddddocr
+
+
+class CaptchaHandler:
+    """验证码自动识别流水线
+    三步走：Playwright 元素级截图 → PIL 预处理增强 → ddddocr 识别
+    """
+
+    def preprocess(self, image_path, output_path=None, scale=3):
+        """AI 辅助图像预处理增强
+        处理流程：放大(Lanczos 3x) → 灰度 → 锐化 → 对比度增强(2x) → 二值化
+        """
+        if output_path is None:
+            base = image_path.rsplit(".", 1)[0]
+            output_path = f"{base}_enhanced.png"
+        img = Image.open(image_path)
+        w, h = img.size
+        img = img.resize((w * scale, h * scale), Image.LANCZOS)
+        img = img.convert("L")
+        img = img.filter(ImageFilter.UnsharpMask(radius=2, percent=150, threshold=3))
+        enhancer = ImageEnhance.Contrast(img)
+        img = enhancer.enhance(2.0)
+        img = img.point(lambda x: 255 if x > 128 else 0, "1")
+        img.save(output_path)
+        return output_path
+
+    def recognize(self, image_path):
+        """使用 ddddocr 识别验证码"""
+        ocr = ddddocr.DdddOcr(det=False, ocr=True, show_ad=False)
+        with open(image_path, "rb") as f:
+            result = ocr.classification(f.read())
+        return result if result else ""
+
+    def solve(self, page, captcha_selector="img.captcha",
+              input_selector="input.captcha-input",
+              submit_selector="button.submit", max_retries=3):
+        """完整验证码处理流水线"""
+        for attempt in range(1, max_retries + 1):
+            raw_path = f"captcha_raw_{attempt}.png"
+            page.locator(captcha_selector).first.screenshot(path=raw_path)
+            enhanced_path = self.preprocess(raw_path)
+            result = self.recognize(enhanced_path)
+            if result and len(result) >= 4:
+                page.locator(input_selector).fill(result)
+                page.locator(submit_selector).click()
+                page.wait_for_timeout(2000)
+                if not page.locator(captcha_selector).is_visible():
+                    return result
+            page.locator("img.captcha-refresh").click()
+            page.wait_for_timeout(1000)
+        return None
+
+```
+
 ### helper/ 目录（如有 Node.js helper）
 
 ```
@@ -203,6 +265,8 @@ python-dotenv>=1.0
 # lxml>=4.9
 # parsel>=1.8
 # httpx>=0.24
+# ddddocr>=1.0
+# Pillow>=10.0
 ```
 
 
@@ -241,6 +305,7 @@ python-dotenv>=1.0
 - [ ] 数据正常写入 `storage/` 目录
 - [ ] 至少两条数据验证通过（不同的 page/参数）
 - [ ] Node.js helper（如有）独立自测通过：`node helper/test.js`
+- [ ] captcha_handler.py（如有验证码）独立测试通过
 - [ ] Cookie 等敏感信息在 `.env` 中，不在代码里
 - [ ] README 写了目标站点、使用方法、注意事项
 - [ ] 没有硬编码的绝对路径
