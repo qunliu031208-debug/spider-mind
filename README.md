@@ -1,4 +1,4 @@
-﻿# SpiderMind 🕷️
+# SpiderMind 🕷️
 
 > 渐进式爬虫逆向工程框架 — 从零到一的完整采集项目交付系统
 
@@ -19,17 +19,6 @@ Stage 4: 项目脚手架 + 代码质量检查
    ↓
 Stage 5: 开发文档 (DEV.md) 完整交付
 ```
-
-## 与 spider-king 的区别
-
-| 特性 | SpiderMind | spider-king |
-|------|-----------|-------------|
-| 浏览器工具 | **Playwright** | chrome-devtools |
-| 逆向工具 | **jsreverser-mcp** | js-reverse |
-| 策略 | **渐进式按需升级** | 直接进入逆向 |
-| 纯 Python 优先 | ✅ | ❌ |
-| 补环境方案 | ✅ 默认路径 | ❌ |
-| 中文化交付 | ✅ 注释+文档 | 英文 |
 
 ## 使用方式
 
