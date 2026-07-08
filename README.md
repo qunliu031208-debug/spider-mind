@@ -1,6 +1,6 @@
 # SpiderMind 🕷️
 
-> 从目标 URL 到可维护的爬虫项目，全自动走完指纹识别 → 逆向决策 → 代码实现 → 质量检查 → 文档输出。不是一次性脚本，是完整的工程交付。
+> 从目标 URL 到可维护的爬虫项目，全自动走完结构侦察 → 逆向决策 → 代码实现 → 质量检查 → 文档输出。内置验证码自动处理流水线。不是一次性脚本，是完整的工程交付。
 
 ## 为什么需要 SpiderMind
 
@@ -8,20 +8,25 @@
 
 SpiderMind 把爬虫逆向从「手艺活」变成了「标准化工程」：
 
+- 🔍 **结构化侦察** — 站点架构、反爬指纹、请求链路、数据画像，动手前先建立系统认知
 - 📦 **项目脚手架** — 目录结构、虚拟环境、日志系统、配置分离、存储层，一键生成
+- 🖼️ **验证码自动处理** — Playwright 截图 + AI 预处理增强（锐化/放大/去噪）+ ddddocr 识别，最大化自动化率
 - 🧪 **质量门禁** — 独立环境重建验证、编码检查、异常处理审查、注释完整性扫描，不通过不交付
 - 📝 **开发文档** — 逆向推理全记录、关键代码解析、踩坑复盘、执行流程图，可交接可维护
 - 🔧 **渐进式武装** — 能用 requests 解决绝不上浏览器，能扣代码绝不上深度逆向，每一步都有退出条件
 
-## 方法论：三阶渐进策略
+## 方法论：三阶渐进 + 两翼辅助
 
 SpiderMind 的核心信条：**把重武器留给真正难啃的骨头。**
 
 ```
-阶段 0: 目标指纹 — 确认反爬类型、数据格式、接口路径
+阶段 0: 结构化侦察 — 站点画像 + 反爬指纹 + 请求链路追踪
    ↓
 阶段 1: 纯 Python 探路 — requests 直连，拿到数据直接交付
    ↓ (触发了反爬)
+     ├─ 遇到验证码 → 🖼️ 验证码流水线（截图 → AI 预处理 → ddddocr）
+     └─ 加密参数 → 阶段 2
+   ↓
 阶段 2: Playwright 补环境 — 定位加密点 → 扣 JS 代码 → Node.js 本地验证 → Python 调用
    ↓ (VMP / 重度混淆 / WASM)
 阶段 3: jsreverser 深度逆向 — AST 分析 → 反混淆 → 逻辑还原
@@ -33,7 +38,40 @@ SpiderMind 的核心信条：**把重武器留给真正难啃的骨头。**
 阶段 6: 开发文档输出 — DEV.md 完整记录
 ```
 
+**两翼辅助**：验证码流水线（穿插在任意阶段）+ 结构化侦察（阶段 0 驱动全局决策）。
+
 大部分采集任务在阶段 1 就结束了。不是所有目标都值得上 jsreverser。但每个项目都值得有一份 DEV.md。
+
+## 🖼️ 验证码处理流水线
+
+遇到验证码不直接放弃。SpiderMind 内置了三步自动化流水线：
+
+```
+触发验证码
+    ↓
+① Playwright 定位验证码元素 → 元素级截图（PNG 无损）
+    ↓
+② PIL 预处理增强
+   · 放大 3x（Lanczos 算法）
+   · 灰度化 → 锐化（UnsharpMask）
+   · 对比度增强 2x → 二值化去噪
+    ↓
+③ ddddocr 智能识别
+    ↓
+   ┌───┴───┐
+ 成功      失败（重试 ≤3 次）
+   ↓        ↓
+继续采集   降级：调参重试 / AI 视觉 / 人工 / 跳过
+```
+
+**识别率参考**：
+
+| 验证码类型 | 预处理后识别率 |
+|-----------|-------------|
+| 纯数字（4-6 位） | 90-98% |
+| 数字+字母（4 位） | 80-95% |
+| 中文验证码 | 60-80% |
+| 滑块 / 点选 | Playwright 模拟 |
 
 ## 最终交付物
 
@@ -48,6 +86,7 @@ SpiderMind 的核心信条：**把重武器留给真正难啃的骨头。**
 ├── fetcher.py           # 请求调度（重试 + 超时 + UA 轮换 + 代理）
 ├── parser.py            # 数据解析（HTML / JSON）
 ├── encrypt.py           # 签名/加密参数生成
+├── captcha_handler.py   # 验证码处理（截图 + 预处理 + OCR）
 ├── storage.py           # 存储层（去重 + JSON Lines / SQLite）
 ├── logger.py            # 日志系统（控制台 + 按天轮转）
 ├── node_helper/         # Node.js 补环境模块（按需生成）
@@ -67,7 +106,9 @@ SpiderMind 的核心信条：**把重武器留给真正难啃的骨头。**
 帮我采集 https://target-website.com/search 的商品列表
 ```
 
-SpiderMind 会自动完成全流程。你也可以用脚手架生成器手动初始化项目：
+SpiderMind 会自动完成全流程——包括遇到验证码时自动截图、预处理、识别。
+
+你也可以用脚手架生成器手动初始化项目：
 
 ```bash
 python scripts/scaffold_project.py my_project --with-node
@@ -84,6 +125,7 @@ python main.py
 |------|---------|---------|---------|
 | 静态 HTML / 无鉴权 API | 无 | 阶段 1 | ~20 min |
 | 带 Token / Cookie 的 API | 低 | 阶段 1 | ~30 min |
+| 简单数字验证码 | 低 | 阶段 1 + 验证码流水线 | ~35 min |
 | JS Challenge（`__jsl_clearance` 等） | 中 | 阶段 2 | ~60 min |
 | 自定义加密参数签名 | 中高 | 阶段 2 | ~90 min |
 | obfuscator.io 混淆 / VMP / WASM | 高 | 阶段 3 | ~2 h |
@@ -94,12 +136,14 @@ python main.py
 spider-mind/
 ├── SKILL.md                      # 入口：方法论 & 路由
 ├── agents/openai.yaml            # Agent 配置
-├── references/                   # 各阶段详细手册（12 篇）
-│   ├── workflow-overview.md      # 6 阶段端到端流程图
-│   ├── strategy-triage.md        # 策略决策树
+├── references/                   # 各阶段详细手册（14 篇）
+│   ├── recon.md                  # 🆕 结构化侦察分析（站点画像 + 反爬指纹 + 请求链路）
+│   ├── workflow-overview.md      # 端到端执行地图
+│   ├── strategy-triage.md        # 策略决策树（含验证码分流）
 │   ├── stage-1-pure-py.md        # 纯 Python 探测
 │   ├── stage-2-env-patch.md      # Playwright 调试 + 环境补丁
 │   ├── stage-3-jsreverser.md     # 深度逆向工程
+│   ├── captcha.md                # 🆕 验证码处理流水线（截图 → AI 预处理 → ddddocr）
 │   ├── escalation-ladder.md      # 升级阶梯（防跳步）
 │   ├── code-quality.md           # 交付前 QA 检查清单
 │   ├── dev-doc.md                # DEV.md 开发文档模板
@@ -123,10 +167,20 @@ spider-mind/
 
 ## 环境要求
 
-- Python 3.9+
-- Node.js 18+
-- Playwright（含 Chromium）
-- jsreverser-mcp（MCP 服务，仅在阶段 3 需要）
+| 组件 | 版本 | 用途 |
+|------|------|------|
+| Python | 3.9+ | 核心运行时 |
+| Node.js | 18+ | 补环境 JS 执行（阶段 2） |
+| Playwright | 最新 | 浏览器调试 + 验证码截图 |
+| ddddocr | 最新 | 验证码文字识别 |
+| Pillow | 最新 | 验证码图像预处理增强 |
+| jsreverser-mcp | — | 深度逆向（仅阶段 3 需要） |
+
+安装命令：
+```bash
+pip install playwright ddddocr Pillow
+playwright install chromium
+```
 
 ## 许可
 
