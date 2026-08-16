@@ -64,14 +64,15 @@ SpiderMind 的核心信条：**把重武器留给真正难啃的骨头。**
 继续采集   降级：调参重试 / AI 视觉 / 人工 / 跳过
 ```
 
-**识别率参考**：
+**识别能力参考**（经验值，具体依赖验证码质量与站点混淆程度）：
 
-| 验证码类型 | 预处理后识别率 |
+| 验证码类型 | 预期效果 |
 |-----------|-------------|
-| 纯数字（4-6 位） | 90-98% |
-| 数字+字母（4 位） | 80-95% |
-| 中文验证码 | 60-80% |
-| 滑块 / 点选 | Playwright 模拟 |
+| 纯数字（4-6 位） | 简单验证码大多可自动通过 |
+| 数字+字母（4 位） | 部分可自动通过，失败走降级 |
+| 中文验证码 | 成功率一般，视清晰度而定 |
+| 滑块 / 点选 | Playwright 模拟或专案处理 |
+| 极验等商业验证码 | 不做死磕，优先找 API 绕过方案 |
 
 ## 最终交付物
 
@@ -136,14 +137,16 @@ python main.py
 spider-mind/
 ├── SKILL.md                      # 入口：方法论 & 路由
 ├── agents/openai.yaml            # Agent 配置
-├── references/                   # 各阶段详细手册（14 篇）
+├── references/                   # 各阶段详细手册（16 篇）
 │   ├── recon.md                  # 🆕 结构化侦察分析（站点画像 + 反爬指纹 + 请求链路）
 │   ├── workflow-overview.md      # 端到端执行地图
 │   ├── strategy-triage.md        # 策略决策树（含验证码分流）
 │   ├── stage-1-pure-py.md        # 纯 Python 探测
 │   ├── stage-2-env-patch.md      # Playwright 调试 + 环境补丁
-│   ├── stage-3-jsreverser.md     # 深度逆向工程
+│   ├── stage-3-jsreverser.md     # 深度逆向工程（能力边界声明）
 │   ├── captcha.md                # 🆕 验证码处理流水线（截图 → AI 预处理 → ddddocr）
+│   ├── android-recon.md          # 🆕 安卓逆向基础流程（抓包 → Frida → so 分析）
+│   ├── android-sign-reverse.md   # 🆕 App 签名还原专项（unidbg 离线模拟 → 字节级验证）
 │   ├── escalation-ladder.md      # 升级阶梯（防跳步）
 │   ├── code-quality.md           # 交付前 QA 检查清单
 │   ├── dev-doc.md                # DEV.md 开发文档模板

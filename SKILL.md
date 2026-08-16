@@ -1,16 +1,16 @@
 ---
 name: spider-mind
-description: 三阶渐进式爬虫逆向框架。从接收目标 URL 开始，先结构化侦察定级，再裸 Python 探路，受阻后用 Playwright 配合补环境扣代码，最后以 jsreverser 深度逆向兜底，交付从零到一的完整爬虫项目脚手架。内置验证码处理流水线（Playwright 截图 + AI 预处理增强 + ddddocr 识别）。适用场景：用户提供目标页面 URL、API 地址、JS 片段、加密参数样本，或要求搭建完整爬虫采集项目。
+description: 三阶渐进式爬虫逆向框架 + 安卓 App 签名逆向专项。Web 侧：结构化侦察 → 裸 Python 探路 → Playwright 补环境扣代码 → jsreverser 兜底；Android 侧：抓包定位 → Frida hook → so 静态分析 → unidbg 离线模拟 → 签名还原。交付完整工程脚手架与开发文档。适用场景：目标 URL、API、JS 片段、加密参数样本、安卓 App 签名逆向、完整爬虫采集项目搭建。
 ---
 
 # SpiderMind
 
 ## Role
 
-从一个 URL 开始，交付一个可维护的爬虫项目。
+从一个 URL 或一个 App 开始，交付一个可维护的爬虫/逆向项目。
 
 这个 skill 不是"帮你写个 requests 脚本"，也不只是"帮你过掉某个加密参数"。
-它是从零到一的爬虫项目交付框架，覆盖目标分析、逆向决策、脚本实现、质量检查、文档输出的完整链路。
+它是从零到一的爬虫逆向项目交付框架，覆盖目标分析、逆向决策、脚本实现、质量检查、文档输出的完整链路，同时覆盖 Web（JS）与 Android（native 签名）两条逆向主线。
 
 核心信念：**能简单就不要上工具，渐进式武装，每一步都有退出条件。**
 
@@ -127,6 +127,10 @@ description: 三阶渐进式爬虫逆向框架。从接收目标 URL 开始，�
 - `references/tool-playbook.md` 工具选用与切换指南
 - `references/troubleshooting.md` 故障排查与环境诊断
 
+安卓逆向（Android 签名还原主线）：
+- `references/android-recon.md` 安卓逆向侦察与基础流程（抓包定位 → Frida hook → so 静态分析）
+- `references/android-sign-reverse.md` App 签名还原专项（unidbg 离线模拟 → 算法复现 → 验证）
+
 工程交付与运维：
 - `references/project-scaffold.md` 项目脚手架规范和模板
 - `references/code-quality.md` 代码质量检查清单
@@ -144,7 +148,11 @@ description: 三阶渐进式爬虫逆向框架。从接收目标 URL 开始，�
 三阶 playbook：
 - `references/stage-1-pure-py.md` 裸 Python 探路
 - `references/stage-2-env-patch.md` 补环境扣代码（含中文注释要求）
-- `references/stage-3-jsreverser.md` jsreverser 深度逆向
+- `references/stage-3-jsreverser.md` jsreverser 深度逆向（**能力边界**：依赖 jsreverser-mcp 工具，AI 驱动分析为主，人负责定位与验证，不承诺 100% 还原）
+
+安卓逆向（Android 签名还原主线）：
+- `references/android-recon.md` 安卓逆向基础流程与工具链（Frida / jadx / so 分析）
+- `references/android-sign-reverse.md` 签名还原完整路径（unidbg 离线模拟 → 算法复现 → 字节级验证）
 
 专项能力：
 - `references/captcha.md` 验证码处理（截图 → AI 增强 → OCR）
